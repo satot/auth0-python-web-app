@@ -1,0 +1,90 @@
+from requests.exceptions import RequestException, HTTPError, URLRequired
+import json, requests
+from os import environ as env
+from dotenv import find_dotenv, load_dotenv
+
+ENV_FILE = find_dotenv()
+if ENV_FILE:
+    load_dotenv(ENV_FILE)
+
+class Auth0Data:
+    def __init__(self):
+        self.client = Auth0MgmtApi()
+
+    def get_applications(self):
+        apps = self.client.get_applications()
+        return [{
+                'name': a['name'], 
+                'type': a['app_type'],
+                'client_id': a['client_id']
+            } for a in apps if a.get('app_type')]
+
+    def get_actions(self):
+        acts = self.client.get_actions()["actions"]
+        return [{
+                'name': a['name'], 
+                'app': a['code'], 
+                'trigger': ", ".join(f"{t['id']} ({t['version']})" for t in a['supported_triggers']),
+                'id': a['id'],
+                'created': a['created_at']
+            } for a in acts]
+
+
+class Auth0MgmtApi:
+    def __init__(self):
+        self.initialize_api()
+
+    def initialize_api(self):
+        self.access_token = ''
+        self.set_config()
+
+    def set_config(self):
+        domain = env.get("AUTH0_DOMAIN")
+        self.base_url = f"https://{domain}"
+        self.audience = f'https://{domain}/api/v2/'
+        self.client_id = env.get("APP_CLIENT_ID"),
+        self.client_secret = env.get("APP_CLIENT_SECRET"),
+
+    # Get an Access Token from Auth0
+    def fetch_token(self):
+        payload =  { 
+          'grant_type': "client_credentials", # OAuth 2.0 flow to use
+          'client_id': self.client_id,
+          'client_secret': self.client_secret,
+          'audience': self.audience
+        }
+        response = requests.post(f'{self.base_url}/oauth/token', data=payload)
+        oauth = response.json()
+        return oauth.get('access_token')
+  
+    def api_header(self):
+        if len(self.access_token) == 0:
+            token = self.fetch_token()
+            if token is None:
+                raise ValueError #TODO find better Error
+            self.access_token = token
+        return {
+          'Authorization': f'Bearer {self.access_token}',
+          'Content-Type': 'application/json'
+        }
+
+    def get_applications(self):
+        return self.req_get(f'{self.base_url}/api/v2/clients')
+
+    def get_actions(self):
+        return self.req_get(f'{self.base_url}/api/v2/actions/actions')
+
+    def req_get(self, url):
+        try:
+            res = requests.get(url, headers=self.api_header())
+            return res.json()
+        except HTTPError as e:
+            print(f'HTTPError: {str(e.code)} {str(e.reason)}')
+        except URLRequired as e:
+            print(f'URLRequired: {str(e.reason)}')
+        except RequestException as e:
+            print(f'RequestException: {e}')
+        except Exception as e:
+            print(f'Generic Exception: {e}')
+
+

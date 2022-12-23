@@ -2,15 +2,111 @@
   <head>
     <meta charset="utf-8" />
     <title>Auth0 Example</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   </head>
   <body>
+	<nav class="navbar" role="navigation" aria-label="main navigation">
+	  <div class="navbar-brand">
+	    <a class="navbar-item" href="https://bulma.io">
+	      <img src="https://bulma.io/images/bulma-logo.png" width="112" height="28">
+	    </a>
+	
+	    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+	      <span aria-hidden="true"></span>
+	      <span aria-hidden="true"></span>
+	      <span aria-hidden="true"></span>
+	    </a>
+	  </div>
+	
+	  <div id="navbarBasicExample" class="navbar-menu">
+	    <div class="navbar-start">
+	      <a class="navbar-item">
+	        Home
+	      </a>
+	
+	      <a class="navbar-item">
+	        Documentation
+	      </a>
+	    </div>
+	
+	    <div class="navbar-end">
+	      <div class="navbar-item">
+	        <div class="buttons">
+    				{% if session %}
+	          <a class="button is-light" href="/logout">Log out</a>
+    				{% else %}
+	          <a class="button is-primary" href="/login">
+	            <strong>Log in</strong>
+	          </a>
+    				{% endif %}
+	        </div>
+	      </div>
+	    </div>
+	  </div>
+	</nav>
+	<div class="columns is-centered">
+	<div class="column is-half">
+    <div class="content">
     {% if session %}
-    <h1>Welcome {{session.userinfo.name}}!</h1>
-    <p><a href="/logout" id="qsLogoutBtn">Logout</a></p>
-    <div><pre>{{pretty}}</pre></div>
+      <h1>Welcome {{session.userinfo.name}}!</h1>
+      <h2>Applications</h2>
+      {% if applications |length > 0 %}
+        <div>
+          <table class="table">
+          <thead>
+            <tr>
+              <th><abbr title="name">Name</th>
+              <th><abbr title="type">Type</th>
+              <th><abbr title="client_id">Client Id</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for app in applications %}
+            <tr>
+              <td>{{app['name']}}</td>
+              <td>{{app['type']}}</td>
+              <td>{{app['client_id']}}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p>No Applications</p>
+      {% endif %}
+      <h2>Actions</h2>
+      {% if actions |length > 0 %}
+        <div>
+          <table class="table">
+          <thead>
+            <tr>
+              <th><abbr title="name">Name</th>
+              <th><abbr title="app">Application</th>
+              <th><abbr title="trigger">Trigger</th>
+              <th><abbr title="created_at">Created At</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for a in actions %}
+            <tr>
+              <td>{{a['name']}}</td>
+              <td>{{a['app']}}</td>
+              <td>{{a['trigger']}}</td>
+              <td>{{a['created']}}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p>No Applications</p>
+      {% endif %}
     {% else %}
-    <h1 id="profileDropDown">Welcome Guest</h1>
-    <p><a href="/login" id="qsLoginBtn">Login</a></p>
+      <h1 id="profileDropDown">Welcome Guest</h1>
+		  <p>Please log in from the top menu</p>
     {% endif %}
+    </div><!-- .content -->
+	</div>
+	</div>
   </body>
 </html>
