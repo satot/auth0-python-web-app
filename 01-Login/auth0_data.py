@@ -2,6 +2,7 @@ from requests.exceptions import RequestException, HTTPError, URLRequired
 import json, requests
 from os import environ as env
 from dotenv import find_dotenv, load_dotenv
+import re
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -14,7 +15,7 @@ class Auth0Data:
     def get_applications(self):
         apps = self.client.get_applications()
         return [{
-                'name': a['name'], 
+                'name': a['name'],
                 'type': a['app_type'],
                 'client_id': a['client_id']
             } for a in apps if a.get('app_type')]
@@ -22,12 +23,23 @@ class Auth0Data:
     def get_actions(self):
         acts = self.client.get_actions()["actions"]
         return [{
-                'name': a['name'], 
-                'app': a['code'], 
+                'name': a['name'],
+                'app': self.detect_app(a['code']),
                 'trigger': ", ".join(f"{t['id']} ({t['version']})" for t in a['supported_triggers']),
                 'id': a['id'],
                 'created': a['created_at']
             } for a in acts]
+
+    def detect_app(self, code):
+        pat = re.compile('async \(event, api\) => {\n\s+if \(event\.client\.name (?P<condition>[!=])== "(?P<app_name>.*)"\)')
+        m = pat.search(code)
+        if m is None:
+            return "All applicatoins"
+        else:
+            if m['condition'] == '=':
+                return m['app_name']
+            else:
+                return f"All applicatoins except for {m['app_name']}"
 
 
 class Auth0MgmtApi:
@@ -47,7 +59,7 @@ class Auth0MgmtApi:
 
     # Get an Access Token from Auth0
     def fetch_token(self):
-        payload =  { 
+        payload =  {
           'grant_type': "client_credentials", # OAuth 2.0 flow to use
           'client_id': self.client_id,
           'client_secret': self.client_secret,
@@ -56,7 +68,7 @@ class Auth0MgmtApi:
         response = requests.post(f'{self.base_url}/oauth/token', data=payload)
         oauth = response.json()
         return oauth.get('access_token')
-  
+
     def api_header(self):
         if len(self.access_token) == 0:
             token = self.fetch_token()
