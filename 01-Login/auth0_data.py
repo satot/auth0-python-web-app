@@ -4,6 +4,7 @@ import json, requests
 from os import environ as env
 from requests.exceptions import RequestException, HTTPError, URLRequired
 import re
+from urllib.parse import quote
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -30,6 +31,10 @@ class Auth0Data:
                 'id': a['id'],
                 'created': a['created_at']
             } for a in acts]
+
+    def is_manager(self, uid):
+        roles = self.client.get_roles(uid)
+        return any([r for r in roles if r['name'].lower() == 'managers'])
 
     def detect_app(self, code):
         pat = re.compile('async \(event, api\) => {\n\s+if \(event\.client\.name (?P<condition>[!=])== "(?P<app_name>.*)"\)')
@@ -88,6 +93,9 @@ class Auth0MgmtApi:
 
     def get_actions(self):
         return self.req_get(f'{self.base_url}/api/v2/actions/actions')
+
+    def get_roles(self, uid):
+        return self.req_get(f'{self.base_url}/api/v2/users/{quote(uid)}/roles')
 
     def req_get(self, url):
         try:
