@@ -4,6 +4,7 @@ from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from dotenv import find_dotenv, load_dotenv
 from flask import Flask, redirect, render_template, session, url_for
+from flask_session import Session
 from auth0_data import Auth0Data
 
 ENV_FILE = find_dotenv()
@@ -12,6 +13,9 @@ if ENV_FILE:
 
 app = Flask(__name__)
 app.secret_key = env.get("APP_SECRET_KEY")
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 
 
 oauth = OAuth(app)
@@ -30,7 +34,7 @@ oauth.register(
 # Controllers API
 @app.route("/")
 def home():
-    apps = []
+    apps, actions = [], []
     if session.get("user") is not None:
         d = Auth0Data()
         apps = d.get_applications()

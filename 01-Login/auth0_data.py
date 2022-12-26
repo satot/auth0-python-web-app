@@ -1,7 +1,8 @@
-from requests.exceptions import RequestException, HTTPError, URLRequired
+from dotenv import find_dotenv, load_dotenv
+from flask import session
 import json, requests
 from os import environ as env
-from dotenv import find_dotenv, load_dotenv
+from requests.exceptions import RequestException, HTTPError, URLRequired
 import re
 
 ENV_FILE = find_dotenv()
@@ -59,15 +60,17 @@ class Auth0MgmtApi:
 
     # Get an Access Token from Auth0
     def fetch_token(self):
-        payload =  {
-          'grant_type': "client_credentials", # OAuth 2.0 flow to use
-          'client_id': self.client_id,
-          'client_secret': self.client_secret,
-          'audience': self.audience
-        }
-        response = requests.post(f'{self.base_url}/oauth/token', data=payload)
-        oauth = response.json()
-        return oauth.get('access_token')
+        if session.get("access_token") is None:
+            payload =  {
+              'grant_type': "client_credentials", # OAuth 2.0 flow to use
+              'client_id': self.client_id,
+              'client_secret': self.client_secret,
+              'audience': self.audience
+            }
+            response = requests.post(f'{self.base_url}/oauth/token', data=payload)
+            oauth = response.json()
+            session["access_token"] = oauth.get('access_token')
+        return session["access_token"]
 
     def api_header(self):
         if len(self.access_token) == 0:
