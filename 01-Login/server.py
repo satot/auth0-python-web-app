@@ -52,7 +52,8 @@ def home():
 def callback():
     token = oauth.auth0.authorize_access_token()
     session["user"] = token
-    session["is_manager"] = Auth0Data().is_manager(token["userinfo"]["sub"])
+    session["is_manager"] = any(r for r in token["userinfo"][get_roles_key()] \
+            if r.lower() == "managers")
     return redirect("/")
 
 
@@ -78,6 +79,10 @@ def logout():
             quote_via=quote_plus,
         )
     )
+
+def get_roles_key():
+    domain = env.get("AUTH0_DOMAIN")
+    return "https://" + domain.split(".")[0] + "/roles"
 
 
 if __name__ == "__main__":
