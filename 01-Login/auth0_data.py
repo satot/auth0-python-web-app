@@ -23,14 +23,13 @@ class Auth0Data:
             } for a in apps if a.get('app_type')]
 
     def get_actions(self):
-        acts = self.client.get_actions()["actions"]
         return [{
                 'name': a['name'],
                 'app': self.detect_app(a['code']),
                 'trigger': ", ".join(f"{t['id']} ({t['version']})" for t in a['supported_triggers']),
                 'id': a['id'],
                 'created': a['created_at']
-            } for a in acts]
+            } for a in self.client.get_actions()]
 
     def is_manager(self, uid):
         roles = self.client.get_roles(uid)
@@ -92,7 +91,8 @@ class Auth0MgmtApi:
         return self.req_get(f'{self.base_url}/api/v2/clients')
 
     def get_actions(self):
-        return self.req_get(f'{self.base_url}/api/v2/actions/actions')
+        res = self.req_get(f'{self.base_url}/api/v2/actions/actions')
+        return res.get('actions') if (res and 'actions' in res) else []
 
     def get_roles(self, uid):
         return self.req_get(f'{self.base_url}/api/v2/users/{quote(uid)}/roles')
@@ -100,9 +100,10 @@ class Auth0MgmtApi:
     def req_get(self, url):
         try:
             res = requests.get(url, headers=self.api_header())
+            res.raise_for_status()
             return res.json()
         except HTTPError as e:
-            print(f'HTTPError: {str(e.code)} {str(e.reason)}')
+            print(f'HTTPError: {str(e)}')
         except URLRequired as e:
             print(f'URLRequired: {str(e.reason)}')
         except RequestException as e:
