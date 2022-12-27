@@ -60,8 +60,8 @@ class Auth0MgmtApi:
         domain = env.get("AUTH0_DOMAIN")
         self.base_url = f"https://{domain}"
         self.audience = f'https://{domain}/api/v2/'
-        self.client_id = env.get("APP_CLIENT_ID"),
-        self.client_secret = env.get("APP_CLIENT_SECRET"),
+        self.client_id = env.get("AUTH0_CLIENT_ID"),
+        self.client_secret = env.get("AUTH0_CLIENT_SECRET"),
 
     # Get an Access Token from Auth0
     def fetch_token(self):
